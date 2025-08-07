@@ -1,0 +1,6 @@
+node_modules/
+backup/
+.ropeproject/
+
+.env
+Source.md
