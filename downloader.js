@@ -1,8 +1,12 @@
 const fs = require("fs");
 const path = require("path");
 
-// prettier-ignore
-if (!fs.existsSync(modelsPath)) {
+const modelsPath = path.resolve(
+  __dirname,
+  "./models/universal-sentence-encoder",
+);
+
+if (!fs.existsSync(path.join(modelsPath, "model.json"))) {
   fs.mkdirSync(path.resolve(__dirname, modelsPath), { recursive: true });
 
   fetch(
@@ -10,7 +14,6 @@ if (!fs.existsSync(modelsPath)) {
   )
     .then((response) => response.json())
     .then((result) => {
-      const modelsPath = path.resolve(__dirname, "./models/universal-sentence-encoder");
       const modelPath = path.resolve(modelsPath, "model.json");
       const binPaths = result.weightsManifest[0].paths;
 
@@ -23,15 +26,13 @@ if (!fs.existsSync(modelsPath)) {
         fetch(url)
           .then((response) => response.arrayBuffer())
           .then((data) => {
-            const binPathWithoutExt = binPath.replace(".bin", "");
-            const binFilePath = path.resolve(modelsPath, binPathWithoutExt);
+            const binFilePath = path.resolve(modelsPath, binPath);
             fs.writeFileSync(binFilePath, Buffer.from(data));
           })
           .catch((error) => {
             console.log(`Error fetching ${binPath}: ${error.message}`);
           });
       }
-
     })
     .catch((error) => {
       console.log(error.message);
