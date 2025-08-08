@@ -1,4 +1,5 @@
 const pgp = require("pg-promise")({ capSQL: true });
+const pg = require("pg");
 
 // prettier-ignore
 const config = {
@@ -10,13 +11,13 @@ const config = {
 };
 
 const db = pgp(config);
+const client = new pg.Client(config);
 
 async function storeInPg(movieBatch) {
   const columns = new pgp.helpers.ColumnSet(
     ["title", "director", "plot", "year", "wiki", "cast", "genre", "embedding"],
     { table: "movie_plots" },
   );
-
   const values = movieBatch.map((movie) => ({
     title: movie["Title"],
     director: movie["Director"],
@@ -27,10 +28,24 @@ async function storeInPg(movieBatch) {
     wiki: movie["Wiki Page"],
     embedding: movie["Embedding"],
   }));
-
   const query = pgp.helpers.insert(values, columns);
-
   await db.none(query);
 }
 
-module.exports = { db, storeInPg };
+async function searchInPg(embedding, limit) {
+  await client.connect();
+  try {
+    const pgResponse = await client.query(
+      `SELECT * FROM movie_plots
+      ORDER BY embedding <-> '${JSON.stringify(embedding)}'
+      LIMIT ${limit};`,
+    );
+    return pgResponse.rows;
+  } catch (error) {
+    console.log(error);
+  } finally {
+    await client.end();
+  }
+}
+
+module.exports = { db, storeInPg, searchInPg };
