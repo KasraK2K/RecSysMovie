@@ -1,4 +1,5 @@
 declare type Movie = {
+  id: number;
   title: string;
   director: string;
   cast: string;
