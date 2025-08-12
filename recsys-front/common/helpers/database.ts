@@ -1,19 +1,20 @@
-const pgp = require("pg-promise")({ capSQL: true });
-const pg = require("pg");
+import pgPromise from "pg-promise";
+import pg from "pg";
+import type MovieDataset from "@/common/types/movie-dataset";
+
+const pgp = pgPromise({ capSQL: true });
 
 // prettier-ignore
 const config = {
-  user:     process.env.POSTGRES_USER,
-  password: process.env.POSTGRES_PASSWORD,
-  host:     process.env.POSTGRES_HOST,
-  port:     process.env.POSTGRES_PORT,
-  database: process.env.POSTGRES_DB,
+  user:     process.env.POSTGRES_USER!,
+  password: process.env.POSTGRES_PASSWORD!,
+  host:     process.env.POSTGRES_HOST!,
+  port:     Number(process.env.POSTGRES_PORT),
+  database: process.env.POSTGRES_DB!,
 };
 
-const db = pgp(config);
-const client = new pg.Client(config);
-
-async function storeInPg(movieBatch) {
+export async function storeInPg(movieBatch: MovieDataset[]) {
+  const db = pgp(config);
   const columns = new pgp.helpers.ColumnSet(
     ["title", "director", "plot", "year", "wiki", "cast", "genre", "embedding"],
     { table: "movie_plots" },
@@ -28,11 +29,13 @@ async function storeInPg(movieBatch) {
     wiki: movie["Wiki Page"],
     embedding: movie["Embedding"],
   }));
+
   const query = pgp.helpers.insert(values, columns);
   await db.none(query);
 }
 
-async function searchInPg(embedding, limit) {
+export async function searchInPg(embedding: number[], limit: number) {
+  const client = new pg.Client(config);
   await client.connect();
   try {
     const pgResponse = await client.query(
@@ -47,5 +50,3 @@ async function searchInPg(embedding, limit) {
     await client.end();
   }
 }
-
-module.exports = { db, storeInPg, searchInPg };
